@@ -1,3 +1,6 @@
+// TODO music currently playing page
+// TODO seek
+
 <template>
     <div id="app">
         <div class="search-app-bar">
@@ -163,6 +166,14 @@
 </script>
 
 <style>
+    * {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        -o-user-select: none;
+        user-select: none;
+    }
+
     .root {
         --primary-color: rgba(0, 100, 255, 1);
     }
