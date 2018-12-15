@@ -7,7 +7,8 @@
                  v-bind:style="{ backgroundColor: song.color, left: 'calc('+progress+'% - 4.5px)'}"></div>
         </div>
 
-        <div class="player-container">
+        <div class="player-container" v-on:touchstart="startSwipe($event.touches[0])"
+             v-on:mousedown="startSwipe($event)">
             <div class="player-thumbnail" v-bind:style="{ backgroundImage: 'url(' + song.thumbnail + ')' }"></div>
             <div class="player-info" v-on:click="toggleNowPlaying">
                 <div class="player-title">{{song.title}}</div>
@@ -51,18 +52,34 @@
                 this.progress = Math.round(progress * 10000) / 100;
             }, 10);
 
-            document.addEventListener('mouseup', () => this.endSeeking());
-            document.addEventListener('touchend', () => this.endSeeking());
+            document.addEventListener('mouseup', e => this.endSeeking(e));
+            document.addEventListener('touchend', e => this.endSeeking(e.changedTouches[0]));
             document.addEventListener('mousemove', e => this.seek(e));
             document.addEventListener('touchmove', e => this.seek(e.touches[0]));
         },
         methods: {
+            startSwipe: function (e) {
+                this.startSwipePosition = e.pageX;
+            },
             startSeeking: function (e) {
                 this.seeking = true;
                 this.seekByEvent(e);
             },
-            endSeeking: function () {
+            endSeeking: function (e) {
                 this.seeking = false;
+                if (this.startSwipePosition !== false) {
+                    let distance = e.pageX - this.startSwipePosition;
+                    this.startSwipePosition = false;
+                    if (Math.abs(distance) > 100)
+                        if (distance < 0) {
+                            console.log("end seeking skip song", 1);
+                            this.$emit('skip', 1);
+                        }
+                        else {
+                            console.log("end seeking skip song", -1);
+                            this.$emit('skip', -1);
+                        }
+                }
             },
             seek: function (e) {
                 if (this.seeking)
@@ -70,47 +87,57 @@
             },
             seekByEvent: function (e) {
                 let seekValue = e.pageX / window.innerWidth;
+                this.seekByValue(seekValue);
+            },
+            seekByValue: function (percentage) {
                 let player = document.querySelector('.audio-player');
                 let time = 0;
                 if (player.duration)
-                    time = player.duration * seekValue;
+                    time = player.duration * percentage;
                 player.currentTime = time;
             },
             loadSong: async function (song) {
                 return new Promise(async resolve => {
                     this.loading = true;
                     let player = document.querySelector('.audio-player');
-                    player.src = await mediaHelper.getAudioSource(this.api, song.id);
-                    player.oncanplay = async () => {
+                    let source = await mediaHelper.getAudioSource(this.api, song.id);
+                    player.src = source;
+                    player.load();
+                    player.oncanplaythrough = async () => {
+                        console.log("oncanplaythrough is triggered");
                         if (player.duration === Infinity) {
                             // Streaming
-                            console.log("Current song not cached on server");
+                            console.warn("Current song not cached on server");
                             this.api.await(song.id).then(async () => {
+                                let paused = player.paused;
                                 if (player.src.includes(song.id)) {
                                     //song is still being played
                                     await mediaHelper.cacheSongLocallyIfNeeded(this.api, song.id);
                                     let time = player.currentTime;
                                     await this.loadSong(song);
-                                    await player.play();
+                                    if (!paused)
+                                        await player.play();
                                     player.currentTime = time;
                                 }
-                                console.log("Server is done caching");
                             });
                             resolve();
+                            player.oncanplaythrough = () => {
+                            };
                             return;
                         } else {
                             await mediaHelper.cacheSongLocallyIfNeeded(this.api, song.id);
                         }
-                        // console.log('done loading', player.duration);
+                        player.oncanplaythrough = () => {
+                        };
                         this.loading = false;
                         resolve();
                     };
                 });
             },
-            togglePlayPause: function () {
+            togglePlayPause: async function () {
                 let player = document.querySelector('.audio-player');
                 if (player.paused) {
-                    player.play();
+                    await player.play();
                     this.playing = true;
                 } else {
                     player.pause();
@@ -132,7 +159,7 @@
 <style scoped>
     .player {
         min-height: 70px;
-        background-color: rgb(25,25,25);
+        background-color: rgb(25, 25, 25);
     }
 
     .seek-bar {
@@ -154,7 +181,7 @@
         top: 7px;
         height: 12px;
         background-color: rgba(255, 255, 255, 0.6);
-        opacity: 0.3;
+        filter: brightness(30%);
     }
 
     .seek-progress {
@@ -163,7 +190,7 @@
         top: 7px;
         height: 12px;
         background-color: rgba(255, 255, 255, 0.6);
-        opacity: 0.6;
+        filter: brightness(60%);
     }
 
     .seek-thumb {
@@ -173,6 +200,7 @@
         top: 7px;
         background-color: white;
         width: 5px;
+        filter: brightness(120%);
     }
 
     .player-container {
@@ -187,7 +215,7 @@
         height: 45px;
         min-width: 45px;
         margin: 12px;
-        margin-right:4px;
+        margin-right: 4px;
         background-size: cover;
         background-position: center;
         box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.6);

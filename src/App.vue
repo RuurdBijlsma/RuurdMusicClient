@@ -3,8 +3,8 @@
 
 <template>
     <div id="app">
-        <now-playing v-bind:api="api" v-bind:song="currentSong" v-bind:active="showNowPlaying"
-                     v-bind:playing="audioIsPlaying" v-on:toggleNowPlaying="toggleNowPlaying()"></now-playing>
+        <now-playing v-bind:api="api" v-bind:song="currentSong" v-bind:active="showNowPlaying" v-on:togglePlayPause="togglePlayPause"
+                     v-bind:playing="audioIsPlaying" v-on:toggleNowPlaying="toggleNowPlaying()" v-on:skip="skipSong" v-bind:player="playerRef"></now-playing>
         <div class="main-page">
             <div class="search-app-bar" v-bind:style="{ backgroundColor: currentSong.color }">
                 <input type="search" class="search-input" placeholder="Search music" v-model="searchQuery"
@@ -59,7 +59,7 @@
                     </div>
                 </div>
             </div>
-            <player ref="player" v-bind:song="currentSong" v-bind:api="api"
+            <player ref="player" v-bind:song="currentSong" v-bind:api="api" v-on:skip="skipSong"
                     v-on:playPause="updateAudioPlaying()" v-on:toggleNowPlaying="toggleNowPlaying()"></player>
         </div>
 
@@ -97,6 +97,7 @@
         data() {
             return {
                 mainPlaylist: playlist,
+                currentPlaylist: new Playlist(),
                 showNowPlaying: false,
                 searchQuery: '',
                 searchResults: [],
@@ -104,9 +105,22 @@
                 currentSong: new Song(),
                 api: api,
                 audioIsPlaying: false,
+                playerRef: this.$refs.player
             }
         },
         methods: {
+            skipSong: async function (i) {
+                console.log("Skip song called");
+                let currentIndex = this.currentPlaylist.songs.indexOf(this.currentSong);
+                let nextIndex = (currentIndex + i) % this.currentPlaylist.songs.length;
+                if (nextIndex < 0)
+                    nextIndex = this.currentPlaylist.songs.length - 1;
+                let song = this.currentPlaylist.songs[nextIndex];
+                await this.playSong(song);
+            },
+            togglePlayPause: async function(){
+                await this.$refs.player.togglePlayPause();
+            },
             toggleNowPlaying: function () {
                 this.showNowPlaying = !this.showNowPlaying;
             },
@@ -164,11 +178,10 @@
             playSong: async function (song) {
                 let player = this.$refs.player;
                 await this.loadSong(song);
-                player.togglePlayPause();
+                await player.togglePlayPause();
             },
             loadSong: async function (song) {
                 let player = this.$refs.player;
-                console.log("Setting current song to ", song);
                 this.currentSong = song;
                 await player.loadSong(song);
             },
@@ -178,7 +191,10 @@
             },
         },
         async mounted() {
+            this.playerRef = this.$refs.player;
             await this.updateSongList();
+
+            this.currentPlaylist = this.mainPlaylist;
 
             let firstSong = this.mainPlaylist.songs[Math.floor(this.mainPlaylist.songs.length * Math.random())];
             if (firstSong)
@@ -195,10 +211,6 @@
         -ms-user-select: none;
         -o-user-select: none;
         user-select: none;
-    }
-
-    .root {
-        --primary-color: rgba(0, 100, 255, 1);
     }
 
     body, html {
@@ -234,7 +246,7 @@
         width: 100%;
         height: 60px;
         background-color: rgb(80, 80, 80);
-        filter: grayscale(57%);
+        filter: saturate(40%);
     }
 
     .search-input {

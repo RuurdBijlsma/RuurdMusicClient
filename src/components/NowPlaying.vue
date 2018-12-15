@@ -8,18 +8,20 @@
             <p class="song-title">{{song.title}}</p>
             <p class="song-artist">{{song.artist}}</p>
 
-            <div class="seek-bar">
+            <div class="seek-bar" v-on:mousedown="startSeeking($event)"
+                 v-on:touchstart="startSeeking($event.touches[0])">
                 <canvas class="seek-canvas"></canvas>
             </div>
             <div class="media-controls">
-                <div class="media-previous">
+                <div class="media-previous" v-on:click="skipSong(-1)">
                     <md-icon>skip_previous</md-icon>
                 </div>
-                <div class="media-playpause" v-bind:style="{ backgroundColor: song.color }">
+                <div class="media-playpause" v-bind:style="{ backgroundColor: song.color }"
+                     v-on:click="togglePlayPause">
                     <md-icon v-if="playing">pause</md-icon>
                     <md-icon v-else>play_arrow</md-icon>
                 </div>
-                <div class="media-next">
+                <div class="media-next" v-on:click="skipSong(1)">
                     <md-icon>skip_next</md-icon>
                 </div>
             </div>
@@ -37,20 +39,49 @@
     export default {
         name: 'NowPlaying',
         props: {
+            player: {type: Object, required: false},
             song: {type: Song, required: false},
             playing: {type: Boolean, require: false},
             active: {type: Boolean, require: false},
             api: {type: StreamApi, required: true}
         },
         data() {
-            return {}
+            return {
+                seeking: false
+            }
         },
         mounted() {
-            console.log("NOW PLAYING", this.song);
+            document.addEventListener('mouseup', e => this.endSeeking(e));
+            document.addEventListener('touchend', e => this.endSeeking(e.changedTouches[0]));
+            document.addEventListener('mousemove', e => this.seek(e));
+            document.addEventListener('touchmove', e => this.seek(e.touches[0]));
         },
         methods: {
-            toggleNowPlaying: function(){
+            skipSong: function (i) {
+                console.log("Skip song in now playing called", i);
+                this.$emit('skip', i);
+            },
+            startSeeking: function (e) {
+                this.seeking = true;
+                this.player.seekByEvent(e);
+            },
+            endSeeking: function (e) {
+                this.seeking = false;
+            },
+            seek: function (e) {
+                if (this.seeking)
+                    this.player.seekByEvent(e);
+            },
+            seekByEvent: function (e) {
+                let seekValue = e.pageX / window.innerWidth;
+                this.player.seekByValue(seekValue);
+            },
+            toggleNowPlaying: function () {
                 this.$emit('toggleNowPlaying', false);
+            },
+            togglePlayPause: function () {
+                // this.player.togglePlayPause();
+                this.$emit('togglePlayPause');
             }
         },
         watch: {

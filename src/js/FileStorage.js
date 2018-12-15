@@ -2,22 +2,25 @@ class FileStorage {
     constructor() {
         this.isReady = false;
         this.requestSize = 1024 ** 3; // 1GB
-        this.onready = () => {
-        };
+        this.events = {};
+
         console.log("Instanced");
-        this.getFileSystem().then(fs => {
+        this.getFileSystem().then(async fs => {
             this.fileSystem = fs;
-            this.requestMoreQuota(this.requestSize);
+            await this.requestMoreQuota(this.requestSize);
             this.isReady = true;
-            this.onready(fs);
+            this.fire('ready');
         });
     }
 
     async awaitReady() {
-        if (this.isReady)
-            return;
         return new Promise(resolve => {
-            this.onready = () => resolve();
+            if (this.isReady)
+                resolve();
+            this.on('ready', () => {
+                console.log("resolving ready here");
+                resolve();
+            });
         });
     }
 
@@ -82,6 +85,25 @@ class FileStorage {
                 writer.write(blob);
             });
         });
+    }
+
+    on(event, callback) {
+        if (!this.events[event])
+            this.events[event] = [];
+
+        this.events[event].push(callback);
+    }
+
+    off(event, callback) {
+        if (this.events[event])
+            this.events[event].splice(this.events.indexOf(callback), 1);
+    }
+
+    fire(event) {
+        if (this.events[event])
+            for (let cb of this.events[event]) {
+                cb();
+            }
     }
 }
 
