@@ -13,6 +13,9 @@
                 <canvas class="seek-canvas"></canvas>
             </div>
             <div class="media-controls">
+                <div class="media-repeat" v-on:click="toggleRepeat">
+                    <md-icon v-bind:style="{ color: repeated?song.color : 'rgba(255,255,255,0.5)'}">repeat</md-icon>
+                </div>
                 <div class="media-previous" v-on:click="skipSong(-1)">
                     <md-icon>skip_previous</md-icon>
                 </div>
@@ -23,6 +26,9 @@
                 </div>
                 <div class="media-next" v-on:click="skipSong(1)">
                     <md-icon>skip_next</md-icon>
+                </div>
+                <div class="media-shuffle" v-on:click="toggleShuffle">
+                    <md-icon v-bind:style="{ color: shuffled?song.color : 'rgba(255,255,255,0.5)'}">shuffle</md-icon>
                 </div>
             </div>
         </div>
@@ -44,7 +50,9 @@
             song: {type: Song, required: false},
             playing: {type: Boolean, require: false},
             active: {type: Boolean, require: false},
-            api: {type: StreamApi, required: true}
+            api: {type: StreamApi, required: true},
+            shuffled: {type: Boolean, require: false},
+            repeated: {type: Boolean, require: false},
         },
         data() {
             return {
@@ -59,6 +67,12 @@
             document.addEventListener('touchmove', e => this.seek(e.touches[0]));
         },
         methods: {
+            toggleRepeat: function(){
+                this.$emit('repeat', !this.repeated);
+            },
+            toggleShuffle: function () {
+                this.$emit('shuffle', !this.shuffled);
+            },
             skipSong: function (i) {
                 console.log("Skip song in now playing called", i);
                 this.$emit('skip', i);

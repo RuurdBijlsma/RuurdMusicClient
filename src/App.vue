@@ -1,17 +1,24 @@
 // TODO SHORT TERM
-// on previous song go to start of song, then go to previous song
 // next in search result mogelijkheid (search playlist)
 // shuffle toggle in now playing scherm
-// onthouden waar het laatste afgespeeld was
 
 //TODO LONG TERM
 // lastfm thumbnails
 
 <template>
     <div id="app">
-        <now-playing v-bind:progress="songProgress" v-bind:api="api" v-bind:song="currentSong"
-                     v-bind:active="showNowPlaying" v-on:togglePlayPause="togglePlayPause"
-                     v-bind:playing="audioIsPlaying" v-on:toggleNowPlaying="toggleNowPlaying()" v-on:skip="skipSong"
+        <now-playing v-on:shuffle="toggleShuffle"
+                     v-on:repeat="toggleRepeated"
+                     v-on:togglePlayPause="togglePlayPause"
+                     v-on:toggleNowPlaying="toggleNowPlaying"
+                     v-on:skip="skipSong"
+                     v-bind:repeated="repeated"
+                     v-bind:shuffled="shuffled"
+                     v-bind:progress="songProgress"
+                     v-bind:api="api"
+                     v-bind:song="currentSong"
+                     v-bind:active="showNowPlaying"
+                     v-bind:playing="audioIsPlaying"
                      v-bind:player="playerRef"></now-playing>
         <div class="main-page">
             <div class="search-app-bar" v-bind:style="{ backgroundColor: currentSong.color }"></div>
@@ -129,10 +136,20 @@
                 api: api,
                 audioIsPlaying: false,
                 playerRef: this.$refs.player,
-                shuffled: false
+                shuffled: false,
+                repeated: true,
             }
         },
         methods: {
+            toggleShuffle: function (s) {
+                if (s)
+                    this.shuffle();
+                else
+                    this.unshuffle();
+            },
+            toggleRepeated: function (s) {
+                this.repeated = s;
+            },
             shufflePlay: function () {
                 this.shuffle();
                 this.skipSong(1);
@@ -150,13 +167,25 @@
                 this.songProgress = p;
             },
             skipSong: async function (i) {
+                let player = document.querySelector('.audio-player');
+                if (i === -1 && player.currentTime > 5) {
+                    player.currentTime = 0;
+                    return;
+                }
                 console.log("Skip song called");
                 let currentIndex = this.currentPlaylist.songs.indexOf(this.currentSong);
-                let nextIndex = (currentIndex + i) % this.currentPlaylist.songs.length;
-                if (nextIndex < 0)
-                    nextIndex = this.currentPlaylist.songs.length - 1;
-                let song = this.currentPlaylist.songs[nextIndex];
-                await this.playSong(song);
+                let nextIndex = currentIndex + i;
+                let continuePlaying = true;
+                if (nextIndex >= this.currentPlaylist.songs.length)
+                    if (this.repeated) nextIndex = 0;
+                    else continuePlaying = false;
+
+                if (continuePlaying) {
+                    if (nextIndex < 0)
+                        nextIndex = this.currentPlaylist.songs.length - 1;
+                    let song = this.currentPlaylist.songs[nextIndex];
+                    await this.playSong(song);
+                }
             },
             togglePlayPause: async function () {
                 await this.$refs.player.togglePlayPause();
@@ -225,10 +254,6 @@
                 this.currentSong = song;
                 await player.loadSong(song);
             },
-            loadFirstSong: async function (song) {
-                // Get song that was playing previously
-                await this.loadSong(song);
-            },
         },
         async mounted() {
             registerDummyServiceWorker();
@@ -238,9 +263,15 @@
 
             this.currentPlaylist = this.mainPlaylist;
 
-            let firstSong = this.mainPlaylist.songs[Math.floor(this.mainPlaylist.songs.length * Math.random())];
-            if (firstSong)
-                await this.loadFirstSong(firstSong);
+            if (localStorage.getItem('lastPlayedSong') !== undefined) {
+                let lastSong = this.mainPlaylist.songs.find(s => s.id === localStorage.lastPlayedSong);
+                console.log('Loading song from last time', lastSong);
+                await this.loadSong(lastSong);
+            } else {
+                let firstSong = this.mainPlaylist.songs[Math.floor(this.mainPlaylist.songs.length * Math.random())];
+                if (firstSong)
+                    await this.loadSong(firstSong);
+            }
         }
     };
 

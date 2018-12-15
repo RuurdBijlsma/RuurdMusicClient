@@ -127,6 +127,7 @@
             loadSong: async function (song) {
                 return new Promise(async resolve => {
                     this.setSongMetaData(song);
+                    localStorage.lastPlayedSong = song.id;
                     this.loading = true;
                     let player = document.querySelector('.audio-player');
                     let source = await mediaHelper.getAudioSource(this.api, song.id);
