@@ -1,14 +1,15 @@
 <template>
     <div class="player">
         <div class="seek-bar" v-on:mousedown="startSeeking($event)" v-on:touchstart="startSeeking($event.touches[0])">
-            <div class="seek-background"></div>
-            <div class="seek-progress" v-bind:style="{ width: progress + '%'}"></div>
-            <div class="seek-thumb" v-bind:style="{ left: 'calc('+progress+'% - 4.5px)'}"></div>
+            <div class="seek-background" v-bind:style="{ backgroundColor: song.color }"></div>
+            <div class="seek-progress" v-bind:style="{ backgroundColor: song.color ,width: progress + '%'}"></div>
+            <div class="seek-thumb"
+                 v-bind:style="{ backgroundColor: song.color, left: 'calc('+progress+'% - 4.5px)'}"></div>
         </div>
 
         <div class="player-container">
             <div class="player-thumbnail" v-bind:style="{ backgroundImage: 'url(' + song.thumbnail + ')' }"></div>
-            <div class="player-info">
+            <div class="player-info" v-on:click="toggleNowPlaying">
                 <div class="player-title">{{song.title}}</div>
                 <div class="player-artist">{{song.artist}}</div>
             </div>
@@ -23,16 +24,15 @@
 </template>
 
 <script>
-    function getAudioSource(api, ytId) {
-        //todo local files hier doen cache
-        return api.getStreamUrl(ytId);
-    }
+    import Song from "@/js/Song";
+    import StreamApi from "@/js/StreamApi";
+    import mediaHelper from '@/js/MediaHelper';
 
     export default {
         name: 'Player',
         props: {
-            song: {type: Object, required: false},
-            api: {type: Object, required: true}
+            song: {type: Song, required: false},
+            api: {type: StreamApi, required: true}
         },
         data() {
             return {
@@ -58,16 +58,13 @@
         },
         methods: {
             startSeeking: function (e) {
-                console.log('start');
                 this.seeking = true;
                 this.seekByEvent(e);
             },
             endSeeking: function () {
-                console.log('end');
                 this.seeking = false;
             },
             seek: function (e) {
-                console.log('seeking');
                 if (this.seeking)
                     this.seekByEvent(e);
             },
@@ -80,15 +77,35 @@
                 player.currentTime = time;
             },
             loadSong: async function (song) {
-                return new Promise((resolve => {
+                return new Promise(async resolve => {
                     this.loading = true;
                     let player = document.querySelector('.audio-player');
-                    player.src = getAudioSource(this.api, song.ytid);
-                    player.oncanplay = () => {
+                    player.src = await mediaHelper.getAudioSource(this.api, song.id);
+                    player.oncanplay = async () => {
+                        if (player.duration === Infinity) {
+                            // Streaming
+                            console.log("Current song not cached on server");
+                            this.api.await(song.id).then(async () => {
+                                if (player.src.includes(song.id)) {
+                                    //song is still being played
+                                    await mediaHelper.cacheSongLocallyIfNeeded(this.api, song.id);
+                                    let time = player.currentTime;
+                                    await this.loadSong(song);
+                                    await player.play();
+                                    player.currentTime = time;
+                                }
+                                console.log("Server is done caching");
+                            });
+                            resolve();
+                            return;
+                        } else {
+                            await mediaHelper.cacheSongLocallyIfNeeded(this.api, song.id);
+                        }
+                        // console.log('done loading', player.duration);
                         this.loading = false;
-                        resolve()
+                        resolve();
                     };
-                }))
+                });
             },
             togglePlayPause: function () {
                 let player = document.querySelector('.audio-player');
@@ -100,6 +117,9 @@
                     this.playing = false;
                 }
             },
+            toggleNowPlaying: function () {
+                this.$emit('toggleNowPlaying', true);
+            }
         },
         watch: {
             playing: function () {
@@ -111,17 +131,17 @@
 
 <style scoped>
     .player {
-        min-height: 60px;
-        background-color: #3e5fbf;
+        min-height: 70px;
+        background-color: rgb(25,25,25);
     }
 
     .seek-bar {
         position: relative;
-        top: 5px;
+        top: 7px;
         left: 0;
         width: 100%;
-        height: 20px;
-        margin-top: -20px;
+        height: 25px;
+        margin-top: -25px;
     }
 
     .seek-bar > div {
@@ -131,26 +151,27 @@
     .seek-background {
         position: absolute;
         width: 100%;
-        top: 5px;
-        height: 10px;
-        background-color: darkcyan;
+        top: 7px;
+        height: 12px;
+        background-color: rgba(255, 255, 255, 0.6);
         opacity: 0.3;
     }
 
     .seek-progress {
         position: absolute;
         width: 30%;
-        top: 5px;
-        height: 10px;
-        background-color: darkcyan;
+        top: 7px;
+        height: 12px;
+        background-color: rgba(255, 255, 255, 0.6);
+        opacity: 0.6;
     }
 
     .seek-thumb {
         position: absolute;
         left: calc(30% - 4.5px);
-        height: 10px;
-        top: 5px;
-        background-color: cyan;
+        height: 12px;
+        top: 7px;
+        background-color: white;
         width: 5px;
     }
 
@@ -163,24 +184,27 @@
     }
 
     .player-thumbnail {
-        height: 50px;
-        min-width: 50px;
-        margin: 4px;
+        height: 45px;
+        min-width: 45px;
+        margin: 12px;
+        margin-right:4px;
         background-size: cover;
         background-position: center;
+        box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.6);
     }
 
     .player-info {
         display: flex;
         flex-direction: column;
-        padding: 10px;
+        padding: 15px 10px;
         flex-grow: 1;
         min-width: 0px;
+        text-shadow: 0px 0px 8px rgba(0, 0, 0, 0.5);
     }
 
     .player-title {
         font-size: 17px;
-        font-weight: 400;
+        font-weight: 500;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -188,18 +212,18 @@
 
     .player-artist {
         font-size: 15px;
-        font-weight: 100;
+        font-weight: 300;
     }
 
     .player-play {
         min-width: 80px;
-        height: 60px;
+        height: 70px;
         text-align: center;
     }
 
     .player-play i {
-        line-height: 60px;
-        height: 60px;
+        line-height: 70px;
+        height: 70px;
         font-size: 30px !important;
     }
 
