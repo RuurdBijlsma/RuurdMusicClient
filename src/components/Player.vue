@@ -50,6 +50,7 @@
                     return 0;
                 let progress = player.currentTime / player.duration;
                 this.progress = Math.round(progress * 10000) / 100;
+                this.$emit('progress', this.progress);
             }, 10);
 
             document.addEventListener('mouseup', e => this.endSeeking(e));
@@ -96,13 +97,48 @@
                     time = player.duration * percentage;
                 player.currentTime = time;
             },
+            setSongMetaData: function (song) {
+                document.title = song.artist + ' - ' + song.title;
+                document.querySelector('meta[name="theme-color"').content = song.color;
+
+                if (!('mediaSession' in navigator))
+                    return;
+
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: song.title,
+                    artist: song.artist,
+                    artwork: [
+                        {src: song.thumbnail, type: 'image/png'},
+                    ]
+                });
+                navigator.mediaSession.setActionHandler('play', () => {
+                    console.log('play');
+                    alert('play');
+                });
+                navigator.mediaSession.setActionHandler('pause', () => {
+                    console.log('pause');
+                    alert('pause');
+                });
+                navigator.mediaSession.setActionHandler('previoustrack', () => {
+                    console.log('previous');
+                    alert('previous');
+                });
+                navigator.mediaSession.setActionHandler('nexttrack', () => {
+                    console.log('previous');
+                    alert('previous');
+                });
+            },
             loadSong: async function (song) {
                 return new Promise(async resolve => {
+                    this.setSongMetaData(song);
                     this.loading = true;
                     let player = document.querySelector('.audio-player');
                     let source = await mediaHelper.getAudioSource(this.api, song.id);
                     player.src = source;
                     player.load();
+                    player.onended = () => {
+                        this.$emit('skip', 1);
+                    };
                     player.oncanplaythrough = async () => {
                         console.log("oncanplaythrough is triggered");
                         if (player.duration === Infinity) {

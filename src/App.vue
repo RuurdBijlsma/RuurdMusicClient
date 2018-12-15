@@ -4,13 +4,14 @@
 
 <template>
     <div id="app">
-        <now-playing v-bind:api="api" v-bind:song="currentSong" v-bind:active="showNowPlaying" v-on:togglePlayPause="togglePlayPause"
-                     v-bind:playing="audioIsPlaying" v-on:toggleNowPlaying="toggleNowPlaying()" v-on:skip="skipSong" v-bind:player="playerRef"></now-playing>
+        <now-playing v-bind:progress="songProgress" v-bind:api="api" v-bind:song="currentSong"
+                     v-bind:active="showNowPlaying" v-on:togglePlayPause="togglePlayPause"
+                     v-bind:playing="audioIsPlaying" v-on:toggleNowPlaying="toggleNowPlaying()" v-on:skip="skipSong"
+                     v-bind:player="playerRef"></now-playing>
         <div class="main-page">
-            <div class="search-app-bar" v-bind:style="{ backgroundColor: currentSong.color }">
-                <input type="search" class="search-input" placeholder="Search music" v-model="searchQuery"
-                       v-on:keydown.enter="performSearch()">
-            </div>
+            <div class="search-app-bar" v-bind:style="{ backgroundColor: currentSong.color }"></div>
+            <input type="search" class="search-input" placeholder="Search music" v-model="searchQuery"
+                   v-on:keydown.enter="performSearch()">
             <div v-if="searchQuery!==''" class="search-results">
                 <div class="song-item" v-for="song in searchResults" v-bind:active="song.id === currentSong.id"
                      v-on:click="playSong(song)">
@@ -35,8 +36,10 @@
                 </div>
             </div>
             <div v-else class="song-list">
-                <div class="shuffle-button" v-bind:style="{ backgroundColor: currentSong.color }">
+                <div v-on:click="shufflePlay" class="shuffle-button"
+                     v-bind:style="{ backgroundColor: currentSong.color }">
                     Shuffle
+                    <md-icon>shuffle</md-icon>
                 </div>
                 <div class="song-item" v-for="song in mainPlaylist.songs" v-bind:active="song.id === currentSong.id"
                      v-on:click="playSong(song)">
@@ -60,7 +63,8 @@
                     </div>
                 </div>
             </div>
-            <player ref="player" v-bind:song="currentSong" v-bind:api="api" v-on:skip="skipSong"
+            <player v-on:progress="onProgress" ref="player" v-bind:song="currentSong" v-bind:api="api"
+                    v-on:skip="skipSong"
                     v-on:playPause="updateAudioPlaying()" v-on:toggleNowPlaying="toggleNowPlaying()"></player>
         </div>
 
@@ -97,8 +101,10 @@
         },
         data() {
             return {
+                songProgress: 0,
+                shuffledPlaylist: new Playlist(),
                 mainPlaylist: playlist,
-                currentPlaylist: new Playlist(),
+                currentPlaylist: playlist,
                 showNowPlaying: false,
                 searchQuery: '',
                 searchResults: [],
@@ -106,10 +112,27 @@
                 currentSong: new Song(),
                 api: api,
                 audioIsPlaying: false,
-                playerRef: this.$refs.player
+                playerRef: this.$refs.player,
+                shuffled: false
             }
         },
         methods: {
+            shufflePlay: function () {
+                this.shuffle();
+                this.skipSong(1);
+            },
+            shuffle: function () {
+                this.shuffledPlaylist = this.currentPlaylist.copy().shuffle();
+                this.currentPlaylist = this.shuffledPlaylist;
+                this.shuffled = true;
+            },
+            unshuffle: function () {
+                this.currentPlaylist = this.mainPlaylist;
+                this.shuffled = false;
+            },
+            onProgress: function (p) {
+                this.songProgress = p;
+            },
             skipSong: async function (i) {
                 console.log("Skip song called");
                 let currentIndex = this.currentPlaylist.songs.indexOf(this.currentSong);
@@ -119,7 +142,7 @@
                 let song = this.currentPlaylist.songs[nextIndex];
                 await this.playSong(song);
             },
-            togglePlayPause: async function(){
+            togglePlayPause: async function () {
                 await this.$refs.player.togglePlayPause();
             },
             toggleNowPlaying: function () {
@@ -245,15 +268,17 @@
 
     .search-app-bar {
         width: 100%;
-        height: 60px;
+        min-height: 60px;
         background-color: rgb(80, 80, 80);
-        filter: saturate(40%);
+        -webkit-filter: saturate(40%);
+        filter: brightness(50%);
     }
 
     .search-input {
         width: calc(100% - 20px);
         margin: 10px;
-        height: calc(100% - 20px);
+        height: 40px;
+        margin-top:-50px;
         border: none;
         padding: 15px;
         font-size: 17px;
@@ -261,6 +286,7 @@
         border-radius: 4px;
         background-color: rgba(255, 255, 255, 0.8);
         box-shadow: 0 2px 3px 0 rgba(0, 0, 0, 0.2);
+        z-index: 1;
     }
 
     input:focus {
@@ -290,6 +316,10 @@
         top: 75px;
         border-radius: 5px;
         box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.25);
+    }
+
+    .shuffle-button i {
+        font-size: 16px !important;
     }
 
     .song-item {

@@ -39,6 +39,7 @@
     export default {
         name: 'NowPlaying',
         props: {
+            progress: {type: Number, required: false},
             player: {type: Object, required: false},
             song: {type: Song, required: false},
             playing: {type: Boolean, require: false},
@@ -47,7 +48,8 @@
         },
         data() {
             return {
-                seeking: false
+                seeking: false,
+                previousCancellationTokens: []
             }
         },
         mounted() {
@@ -82,17 +84,29 @@
             togglePlayPause: function () {
                 // this.player.togglePlayPause();
                 this.$emit('togglePlayPause');
+            },
+            cancelAll: function () {
+                for (let token of this.previousCancellationTokens)
+                    token.cancelled = true;
             }
         },
         watch: {
+            progress: function () {
+                visualizer.setProgress(this.progress / 100);
+            },
             song: async function () {
-                let canvas = document.querySelector('.seek-canvas');
+                this.cancelAll();
+                let cancellationToken = {cancelled: false};
+                this.previousCancellationTokens.push(cancellationToken);
+                visualizer.setProgress(0);
 
+                let canvas = document.querySelector('.seek-canvas');
                 canvas.width = canvas.offsetWidth;
                 canvas.height = canvas.offsetHeight;
+                visualizer.attachCanvas(canvas);
 
                 let source = await mediaHelper.getAudioSource(this.api, this.song.id);
-                visualizer.drawFrequencies(canvas, this.song.color, source);
+                await visualizer.drawFrequencies(this.song.color, source, cancellationToken);
             }
         }
     }

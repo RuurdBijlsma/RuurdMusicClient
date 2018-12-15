@@ -3,7 +3,14 @@ export default class Playlist {
         this.songs = songs;
     }
 
-    shuffle(array = this.songs) {
+    copy() {
+        let newPlaylist = new Playlist([...this.songs]);
+        console.log(newPlaylist);
+        return newPlaylist;
+    }
+
+    shuffle() {
+        let array =this.songs;
         let m = array.length, t, i;
 
         // While there remain elements to shuffle…
@@ -18,6 +25,6 @@ export default class Playlist {
             array[i] = t;
         }
 
-        return array;
+        return this;
     }
 }
