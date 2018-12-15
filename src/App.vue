@@ -1,5 +1,6 @@
-// TODO music currently playing page
-// TODO seek
+// TODO on music end go next song
+// on previous song go to start of song, then go to previous song
+// show progress in canvas visualization
 
 <template>
     <div id="app">

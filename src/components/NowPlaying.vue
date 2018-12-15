@@ -70,7 +70,7 @@
             },
             seek: function (e) {
                 if (this.seeking)
-                    this.player.seekByEvent(e);
+                    this.seekByEvent(e);
             },
             seekByEvent: function (e) {
                 let seekValue = e.pageX / window.innerWidth;
