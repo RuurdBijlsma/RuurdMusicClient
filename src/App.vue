@@ -1,6 +1,11 @@
-// TODO on music end go next song
+// TODO SHORT TERM
 // on previous song go to start of song, then go to previous song
-// show progress in canvas visualization
+// next in search result mogelijkheid (search playlist)
+// shuffle toggle in now playing scherm
+// onthouden waar het laatste afgespeeld was
+
+//TODO LONG TERM
+// lastfm thumbnails
 
 <template>
     <div id="app">
@@ -92,6 +97,17 @@
         brackets: ['[]', '()', '{}'],
         removeWordsInBrackets: ['audio', 'official', 'official music video', 'music video', 'lyrics', 'official video', 'ultra music', 'official audio', 'hq', 'hd', 'hq.']
     };
+
+    function registerDummyServiceWorker() {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/js/dummy-sw.js')
+                .then(function (reg) {
+                    console.log('Registration succeeded. Scope is ' + reg.scope);
+                }).catch(function (error) {
+                console.log('Registration failed with ' + error);
+            });
+        }
+    }
 
     export default {
         name: "app",
@@ -215,6 +231,8 @@
             },
         },
         async mounted() {
+            registerDummyServiceWorker();
+
             this.playerRef = this.$refs.player;
             await this.updateSongList();
 
@@ -278,7 +296,7 @@
         width: calc(100% - 20px);
         margin: 10px;
         height: 40px;
-        margin-top:-50px;
+        margin-top: -50px;
         border: none;
         padding: 15px;
         font-size: 17px;

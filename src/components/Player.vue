@@ -111,21 +111,17 @@
                         {src: song.thumbnail, type: 'image/png'},
                     ]
                 });
-                navigator.mediaSession.setActionHandler('play', () => {
-                    console.log('play');
-                    alert('play');
+                navigator.mediaSession.setActionHandler('play', async () => {
+                    await this.togglePlayPause(true);
                 });
-                navigator.mediaSession.setActionHandler('pause', () => {
-                    console.log('pause');
-                    alert('pause');
+                navigator.mediaSession.setActionHandler('pause', async () => {
+                    await this.togglePlayPause(false);
                 });
                 navigator.mediaSession.setActionHandler('previoustrack', () => {
-                    console.log('previous');
-                    alert('previous');
+                    this.$emit('skip', -1);
                 });
                 navigator.mediaSession.setActionHandler('nexttrack', () => {
-                    console.log('previous');
-                    alert('previous');
+                    this.$emit('skip', 1);
                 });
             },
             loadSong: async function (song) {
@@ -170,9 +166,13 @@
                     };
                 });
             },
-            togglePlayPause: async function () {
+            togglePlayPause: async function (setPlaying) {
                 let player = document.querySelector('.audio-player');
-                if (player.paused) {
+
+                if (setPlaying === undefined) {
+                    setPlaying = player.paused;
+                }
+                if (setPlaying) {
                     await player.play();
                     this.playing = true;
                 } else {
