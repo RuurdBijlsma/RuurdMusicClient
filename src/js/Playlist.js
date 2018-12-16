@@ -1,16 +1,24 @@
 export default class Playlist {
     constructor(songs) {
+        this.setSongs(songs);
+    }
+
+    setSongs(songs) {
         this.songs = songs;
+        this.reshuffle();
+    }
+
+    reshuffle() {
+        if (this.songs)
+            this.shuffledSongs = this.shuffleArray([...this.songs]);
     }
 
     copy() {
         let newPlaylist = new Playlist([...this.songs]);
-        console.log(newPlaylist);
         return newPlaylist;
     }
 
-    shuffle() {
-        let array =this.songs;
+    shuffleArray(array) {
         let m = array.length, t, i;
 
         // While there remain elements to shuffle…
@@ -25,6 +33,6 @@ export default class Playlist {
             array[i] = t;
         }
 
-        return this;
+        return array;
     }
 }

@@ -1,9 +1,10 @@
 // TODO SHORT TERM
 // next in search result mogelijkheid (search playlist)
-// shuffle toggle in now playing scherm
 
 //TODO LONG TERM
 // lastfm thumbnails
+// song radio op basis van related videos van youtube api
+// music visualisatie om ronde album art misschien mooi
 
 <template>
     <div id="app">
@@ -24,6 +25,9 @@
             <div class="search-app-bar" v-bind:style="{ backgroundColor: currentSong.color }"></div>
             <input type="search" class="search-input" placeholder="Search music" v-model="searchQuery"
                    v-on:keydown.enter="performSearch()">
+            <div class="search-back-button" v-if="searchQuery!==''" v-on:click="hideSearch">
+                <md-icon>arrow_back</md-icon>
+            </div>
             <div v-if="searchQuery!==''" class="search-results">
                 <div class="song-item" v-for="song in searchResults" v-bind:active="song.id === currentSong.id"
                      v-on:click="playSong(song)">
@@ -125,9 +129,7 @@
         data() {
             return {
                 songProgress: 0,
-                shuffledPlaylist: new Playlist(),
                 mainPlaylist: playlist,
-                currentPlaylist: playlist,
                 showNowPlaying: false,
                 searchQuery: '',
                 searchResults: [],
@@ -141,6 +143,9 @@
             }
         },
         methods: {
+            hideSearch: function () {
+                this.searchQuery = '';
+            },
             toggleShuffle: function (s) {
                 if (s)
                     this.shuffle();
@@ -155,12 +160,10 @@
                 this.skipSong(1);
             },
             shuffle: function () {
-                this.shuffledPlaylist = this.currentPlaylist.copy().shuffle();
-                this.currentPlaylist = this.shuffledPlaylist;
+                this.mainPlaylist.reshuffle();
                 this.shuffled = true;
             },
             unshuffle: function () {
-                this.currentPlaylist = this.mainPlaylist;
                 this.shuffled = false;
             },
             onProgress: function (p) {
@@ -172,18 +175,18 @@
                     player.currentTime = 0;
                     return;
                 }
-                console.log("Skip song called");
-                let currentIndex = this.currentPlaylist.songs.indexOf(this.currentSong);
+                let songArray = this.shuffled ? this.mainPlaylist.shuffledSongs : this.mainPlaylist.songs;
+                let currentIndex = songArray.indexOf(this.currentSong);
                 let nextIndex = currentIndex + i;
                 let continuePlaying = true;
-                if (nextIndex >= this.currentPlaylist.songs.length)
+                if (nextIndex >= songArray.length)
                     if (this.repeated) nextIndex = 0;
                     else continuePlaying = false;
 
                 if (continuePlaying) {
                     if (nextIndex < 0)
-                        nextIndex = this.currentPlaylist.songs.length - 1;
-                    let song = this.currentPlaylist.songs[nextIndex];
+                        nextIndex = songArray.length - 1;
+                    let song = songArray[nextIndex];
                     await this.playSong(song);
                 }
             },
@@ -234,7 +237,7 @@
 
                 this.cleanSongTitles(songs);
 
-                this.mainPlaylist.songs = songs;
+                this.mainPlaylist.setSongs(songs);
             },
             performSearch: async function () {
                 let results = await api.search(this.searchQuery);
@@ -260,8 +263,6 @@
 
             this.playerRef = this.$refs.player;
             await this.updateSongList();
-
-            this.currentPlaylist = this.mainPlaylist;
 
             if (localStorage.getItem('lastPlayedSong') !== undefined) {
                 let lastSong = this.mainPlaylist.songs.find(s => s.id === localStorage.lastPlayedSong);
@@ -321,6 +322,21 @@
         background-color: rgb(80, 80, 80);
         -webkit-filter: saturate(40%);
         filter: brightness(50%);
+    }
+
+    .search-back-button {
+        position: absolute;
+        height: 60px;
+        width: 60px;
+        text-align: center;
+        z-index: 2;
+        color: #545454;
+    }
+
+    .search-back-button i {
+        line-height: 60px;
+        height: 60px;
+        vertical-align: middle;
     }
 
     .search-input {

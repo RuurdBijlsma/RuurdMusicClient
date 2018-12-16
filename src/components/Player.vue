@@ -72,14 +72,10 @@
                     let distance = e.pageX - this.startSwipePosition;
                     this.startSwipePosition = false;
                     if (Math.abs(distance) > 100)
-                        if (distance < 0) {
-                            console.log("end seeking skip song", 1);
+                        if (distance < 0)
                             this.$emit('skip', 1);
-                        }
-                        else {
-                            console.log("end seeking skip song", -1);
+                        else
                             this.$emit('skip', -1);
-                        }
                 }
             },
             seek: function (e) {
@@ -137,7 +133,6 @@
                         this.$emit('skip', 1);
                     };
                     player.oncanplaythrough = async () => {
-                        console.log("oncanplaythrough is triggered");
                         if (player.duration === Infinity) {
                             // Streaming
                             console.warn("Current song not cached on server");
