@@ -1,5 +1,6 @@
 // TODO SHORT TERM
 // next in search result mogelijkheid (search playlist)
+// back button in chrome/mobile gaat terug van search result en now playing enzo
 
 //TODO LONG TERM
 // lastfm thumbnails
