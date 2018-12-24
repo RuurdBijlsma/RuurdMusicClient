@@ -265,7 +265,7 @@
             this.playerRef = this.$refs.player;
             await this.updateSongList();
 
-            if (localStorage.getItem('lastPlayedSong') !== null) {
+            if (localStorage.getItem('lastPlayedSong') !== null && this.mainPlaylist.songs.includes(localStorage.lastPlayedSong)) {
                 let lastSong = this.mainPlaylist.songs.find(s => s.id === localStorage.lastPlayedSong);
                 console.log('Loading song from last time', lastSong);
                 await this.loadSong(lastSong);
