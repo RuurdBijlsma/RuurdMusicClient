@@ -265,12 +265,12 @@
             this.playerRef = this.$refs.player;
             await this.updateSongList();
 
-            if (localStorage.getItem('lastPlayedSong') !== undefined) {
+            if (localStorage.getItem('lastPlayedSong') !== null) {
                 let lastSong = this.mainPlaylist.songs.find(s => s.id === localStorage.lastPlayedSong);
                 console.log('Loading song from last time', lastSong);
                 await this.loadSong(lastSong);
             } else {
-                let firstSong = this.mainPlaylist.songs[Math.floor(this.mainPlaylist.songs.length * Math.random())];
+                let firstSong = this.mainPlaylist.songs[0];
                 if (firstSong)
                     await this.loadSong(firstSong);
             }

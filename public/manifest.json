@@ -3,12 +3,12 @@
   "name": "VueMusic",
   "icons": [
     {
-      "src": "/favicon.png",
+      "src": "./favicon.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "/favicon144.png",
+      "src": "./favicon144.png",
       "type": "image/png",
       "sizes": "144x144"
     }
