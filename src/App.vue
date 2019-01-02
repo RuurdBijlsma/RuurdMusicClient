@@ -102,7 +102,7 @@
     Vue.use(MdIcon);
 
     const isLocal = location.href.includes('localhost') || location.href.includes('127.0.0.1');
-    const server = isLocal ? 'http://localhost:3000' : 'https://rtc.ruurdbijlsma.com:3000';
+    const server = isLocal ? 'http://localhost:3000' : 'https://grun.ruurdbijlsma.com:3000';
     const api = new StreamApi(server);
     const playlist = new Playlist();
     const titleFixOptions = {
