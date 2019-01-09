@@ -238,8 +238,14 @@
                 try{
                     songs = await api.songs(1);
                     localStorage.offlineSongs = JSON.stringify(songs);
+                    console.log("Made backup:",songs);
                 }catch(e){
-                    songs = JSON.parse(localStorage.offlineSongs);
+                    try{
+                        songs = JSON.parse(localStorage.offlineSongs);
+                    }catch(e){
+                        alert("Could not load songs from server or cache");
+                    }
+                    console.log("Restored from backup:",songs);
                 }
 
                 this.cleanSongTitles(songs);
