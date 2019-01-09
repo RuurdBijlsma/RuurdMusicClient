@@ -234,7 +234,13 @@
                 });
             },
             updateSongList: async function () {
-                let songs = await api.songs(1);
+                let songs;
+                try{
+                    songs = await api.songs(1);
+                    localStorage.offlineSongs = JSON.stringify(songs);
+                }catch(e){
+                    songs = JSON.parse(localStorage.offlineSongs);
+                }
 
                 this.cleanSongTitles(songs);
 
