@@ -279,6 +279,9 @@
                 let firstSong = this.mainPlaylist.songs[0];
                 if (firstSong)
                     await this.loadSong(firstSong);
+                else{
+                    // First time loading website
+                }
             }
         }
     };
