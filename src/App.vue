@@ -98,12 +98,14 @@
     import 'vue-material/dist/vue-material.min.css'
     import NowPlaying from "@/components/NowPlaying";
     import Playlist from './js/Playlist';
+    import UserCredentials from "./js/UserCredentials";
 
     Vue.use(MdIcon);
 
     const isLocal = location.href.includes('localhost') || location.href.includes('127.0.0.1');
-    const server = isLocal ? 'http://localhost:3000' : 'https://grun.ruurdbijlsma.com:3000';
+    const server = isLocal ? 'http://localhost:3000' : 'https://rtc.ruurdbijlsma.com:3000';
     const api = new StreamApi(server);
+    api.changeUser(new UserCredentials('defaultuser', 'examplepassword'));
     const playlist = new Playlist();
     const titleFixOptions = {
         brackets: ['[]', '()', '{}'],
@@ -235,17 +237,17 @@
             },
             updateSongList: async function () {
                 let songs;
-                try{
+                try {
                     songs = await api.songs(1);
                     localStorage.offlineSongs = JSON.stringify(songs);
-                    console.log("Made backup:",songs);
-                }catch(e){
-                    try{
+                    console.log("Made backup:", songs);
+                } catch (e) {
+                    try {
                         songs = JSON.parse(localStorage.offlineSongs);
-                    }catch(e){
+                    } catch (e) {
                         alert("Could not load songs from server or cache");
                     }
-                    console.log("Restored from backup:",songs);
+                    console.log("Restored from backup:", songs);
                 }
 
                 this.cleanSongTitles(songs);
@@ -285,7 +287,7 @@
                 let firstSong = this.mainPlaylist.songs[0];
                 if (firstSong)
                     await this.loadSong(firstSong);
-                else{
+                else {
                     // First time loading website
                 }
             }

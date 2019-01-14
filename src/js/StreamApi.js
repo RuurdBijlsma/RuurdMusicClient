@@ -6,26 +6,30 @@ export default class StreamApi extends CustomApi {
         super(server);
     }
 
+    changeUser(user){
+        this.user = user;
+    }
+
     async await(ytId) {
-        return await this.get('await', ytId);
+        return await this.post(this.user, 'await', ytId);
     }
 
     async search(query) {
-        let songs = await this.get('search', query);
+        let songs = await this.post(this.user, 'search', query);
         return songs.map(s => Song.fromObject(s));
     }
 
-    async songs(user) {
-        let songs = await this.get('songs', user);
+    async songs() {
+        let songs = await this.post(this.user, 'songs');
         return songs.map(s => Song.fromObject(s));
     }
 
     async save(ytId) {
-        return await this.post('save', ytId);
+        return await this.post(this.user, 'save', ytId);
     }
 
     async remove(ytId) {
-        return await this.post('remove', ytId);
+        return await this.post(this.user, 'remove', ytId);
     }
 
     getStreamUrl(ytId) {
