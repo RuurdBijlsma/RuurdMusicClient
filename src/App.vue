@@ -109,7 +109,14 @@
     const playlist = new Playlist();
     const titleFixOptions = {
         brackets: ['[]', '()', '{}'],
-        removeWordsInBrackets: ['audio', 'official', 'official music video', 'music video', 'lyrics', 'official video', 'ultra music', 'official audio', 'hq', 'hd', 'hq.']
+        removeWordsInBrackets: ['audio',
+            'official', 'official music video', 'music video', 'official video',
+            'lyrics',
+            'ultra music',
+            'official audio',
+            'hq', 'hd', 'hq.',
+            'cover art', 'cover', 'art',
+            'lyric', 'lyric video', 'video']
     };
 
     function registerDummyServiceWorker() {
